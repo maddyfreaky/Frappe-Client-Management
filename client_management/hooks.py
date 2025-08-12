@@ -241,4 +241,10 @@ app_license = "mit"
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
-
+scheduler_events = {
+    "cron": {
+        "45 14 * * *": [
+            "client_management.client_management.doctype.activity.recurring_activities.recreate_recurring_activities"
+        ]
+    }
+}
