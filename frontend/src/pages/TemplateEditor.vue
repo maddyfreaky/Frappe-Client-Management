@@ -241,7 +241,7 @@ const createEmptyTask = () => ({
   parent_task: null
 })
 
-// Helper to find parent task index
+
 const findParentTaskIndex = (tasks, parentTaskName) => {
   const parentTask = tasks.find(t => t.task_name === parentTaskName)
   return tasks.indexOf(parentTask)
@@ -309,8 +309,7 @@ const submitForm = async () => {
     })
 
     await resource.submit()
-    
-    
+     
     showSuccess.value = true
     
     

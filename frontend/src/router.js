@@ -57,6 +57,12 @@ const routes = [
 		component: () => import("@/pages/UserTasks.vue"),
 		meta: { requiresAuth: true }
 	},
+	{
+		name: "TaskDetail",
+		path: '/tasks/:id',
+		component: () => import("@/pages/TaskDetailPage.vue"),
+		props: true
+	},
 ]
 
 const router = createRouter({

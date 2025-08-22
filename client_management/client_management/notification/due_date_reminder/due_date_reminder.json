@@ -1,0 +1,32 @@
+{
+ "attach_print": 0,
+ "channel": "Email",
+ "condition": "",
+ "creation": "2025-08-12 12:51:21.569910",
+ "date_changed": "to_date",
+ "days_in_advance": 0,
+ "docstatus": 0,
+ "doctype": "Notification",
+ "document_type": "Activity Tasks",
+ "enabled": 1,
+ "event": "Days After",
+ "idx": 0,
+ "is_standard": 1,
+ "message": "<div style=\"font-family: Arial, sans-serif; font-size: 14px; color: #333;\">\r\n    <p>Hello,</p>\r\n    \r\n    <p>This is a reminder that the task <strong>{{ doc.task_name }}</strong> is due today.</p>\r\n    \r\n    <h3 style=\"margin-bottom: 5px;\">Task Details:</h3>\r\n    <ul>\r\n        <li><strong>Task Name:</strong> {{ doc.task_name }}</li>\r\n        <li><strong>Description:</strong> {{ doc.description or 'N/A' }}</li>\r\n        <li><strong>Priority:</strong> {{ doc.priority or 'N/A' }}</li>\r\n        <li><strong>Assigned To:</strong> {{ doc.assigned_to or 'N/A' }}</li>\r\n        <li><strong>Client:</strong> {{ doc.client or 'N/A' }}</li>\r\n    </ul>\r\n\r\n    <p>Please complete the task before end of day.</p>\r\n    \r\n    <br><hr style=\"border: none; border-top: 1px solid #ccc;\">\r\n    <p style=\"color: #777;\">Best regards,<br>Your Team</p>\r\n</div>",
+ "message_type": "Markdown",
+ "modified": "2025-08-12 13:22:15.551750",
+ "modified_by": "Administrator",
+ "module": "Client Management",
+ "name": "Due Date Reminder",
+ "owner": "Administrator",
+ "recipients": [
+  {
+   "receiver_by_document_field": "assigned_to"
+  }
+ ],
+ "send_system_notification": 0,
+ "send_to_all_assignees": 0,
+ "sender": "Taskaccsys",
+ "sender_email": "taskaccsys@gmail.com",
+ "subject": "Task Due Today: {{ doc.task_name }}"
+}

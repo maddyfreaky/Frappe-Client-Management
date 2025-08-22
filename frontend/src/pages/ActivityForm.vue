@@ -15,204 +15,202 @@
     </div>
 
     
-    <div v-if="formData.template_name" class="card">
-      <h2 class="card-header">Create Activity from Template</h2>
-      <form @submit.prevent="submitForm" class="card-body">
-        
+ <div v-if="formData.template_name" class="card">
+  <h2 class="card-header">Create Activity from Template</h2>
+  <form @submit.prevent="submitForm" class="card-body">
+    
+    <!-- Activity Name -->
+    <Input
+      label="Activity Name"
+      v-model="formData.template_name"
+      type="text"
+      class="mb-4"
+      @blur="validateActivityName"
+    />
+
+    <!-- Recurring Options -->
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="col-span-2">
+        <Checkbox
+          v-model="formData.is_recurring"
+          label="Is Recurring Activity"
+          @change="handleRecurringChange"
+        />
+      </div>
+      <div v-if="formData.is_recurring" class="col-span-2">
+        <Select
+          v-model="formData.recurring_day"
+          :options="daysOfMonth"
+          label="Select day of the month"
+          required
+        />
+      </div>
+      <div class="col-span-2">
+        <Select
+          v-model="formData.client"
+          :options="clientOptions"
+          label="Client"
+          required
+          @change="handleClientChange($event.target.value)"
+        />
+      </div>
+    </div>
+
+    <!-- Tasks Loop -->
+    <div v-for="(task, index) in formData.tasks" :key="index" class="card mb-4 relative">
+      <div v-if="index > 0" class="absolute top-2 right-2">
+        <Button @click="removeTask(index)" variant="ghost" size="sm">
+          Remove
+        </Button>
+      </div>
+      
+      <h3 class="card-header">Task {{ index + 1 }}</h3>
+      <div class="card-body">
+        <!-- Child Task Options -->
+        <div v-if="index > 0" class="mb-4">
+          <Checkbox
+            v-model="task.is_child"
+            @change="handleChildToggle(task)"
+            label="Is Child Task"
+          />
+        </div>
+
+        <!-- Parent Task Select -->
+        <div v-if="task.is_child" class="mb-4">
+          <Select
+            v-model="task.parent_task"
+            :options="[
+              { label: 'Select Parent Task', value: null },
+              ...availableParentTasks(index).map((parent, parentIndex) => ({
+                label: parent.task_name || `Task ${parentIndex + 1}`,
+                value: parentIndex
+              }))
+            ]"
+            label="Parent Task"
+            required
+          />
+        </div>
+
+        <!-- Hide from Client Checkbox -->
+        <div class="mb-4">
+          <Checkbox
+            v-model="task.hide_to_client"
+            label="Hide this task from client view"
+          />
+        </div>
+
+        <!-- Task Name -->
         <Input
-          label="Activity Name"
-          v-model="formData.template_name"
+          label="Task Name"
+          v-model="task.task_name"
           type="text"
+          required
           class="mb-4"
-          @blur="validateActivityName"
         />
 
-        
-        <div class="grid grid-cols-2 gap-4 mb-6">
-          
-          <div class="col-span-2">
-            <Checkbox
-              v-model="formData.is_recurring"
-              label="Is Recurring Activity"
-              @change="handleRecurringChange"
-            />
-          </div>
+        <!-- FIRST ROW: 3 columns (Task Type, Assign To, Priority) -->
+        <div class="grid grid-cols-3 gap-4 mb-4">
+          <!-- Task Type -->
+          <Select
+            v-model="task.task_type"
+            :options="[
+              { label: 'Task Type', value: '' },
+              { label: 'Internal', value: 'Internal' },
+              { label: 'Client', value: 'Client' }
+            ]"
+            required
+            @change="handleTaskTypeChange(index)"
+          />
 
-          
-          <div v-if="formData.is_recurring" class="col-span-2">
-            <Select
-              v-model="formData.recurring_day"
-              :options="daysOfMonth"
-              label="Select day of the month"
-              required
-            />
-          </div>
+          <!-- Assign To -->
+          <Select
+            v-model="task.assign_to"
+            :options="getAssignToOptions(task.task_type)"
+            label="Assign To"
+            required
+          />
 
-          
-          <div class="col-span-2">
-            <Select
-              v-model="formData.client"
-              :options="clientOptions"
-              label="Client"
-              required
-              @change="handleClientChange($event.target.value)"
-            />
-          </div>
+          <!-- Priority -->
+          <Select
+            v-model="task.priority"
+            :options="priorityOptions"
+            label="Priority"
+            required
+          />
         </div>
 
-        
-        <div v-for="(task, index) in formData.tasks" :key="index" class="card mb-4 relative">
-          <div v-if="index > 0" class="absolute top-2 right-2">
-            <Button @click="removeTask(index)" variant="ghost" size="sm">
-              Remove
-            </Button>
-          </div>
-          
-          <h3 class="card-header">Task {{ index + 1 }}</h3>
-          <div class="card-body">
-            
-            <div v-if="index > 0" class="mb-4">
-              <Checkbox
-                v-model="task.is_child"
-                @change="handleChildToggle(task)"
-                label="Is Child Task"
-              />
-            </div>
+        <!-- SECOND ROW: 3 columns (Complete Within Days, From Date, To Date) -->
+        <div class="grid grid-cols-3 gap-4 mb-4">
+          <!-- Complete Within Days -->
+          <Input
+            label="Complete Within Days"
+            v-model="task.complete_within_days"
+            type="number"
+            min="1"
+            required
+          />
 
-            <!-- Parent Task Select -->
-            <div v-if="task.is_child" class="mb-4">
-              <Select
-                v-model="task.parent_task"
-                :options="[
-                  { label: 'Select Parent Task', value: null },
-                  ...availableParentTasks(index).map((parent, parentIndex) => ({
-                    label: parent.task_name || `Task ${parentIndex + 1}`,
-                    value: parentIndex
-                  }))
-                ]"
-                label="Parent Task"
-                required
-              />
-            </div>
+          <!-- From Date -->
+          <Input
+            label="From Date"
+            v-model="task.from_date"
+            type="date"
+            :disabled="task.is_child"
+            :required="!task.is_child"
+          />
 
-            <div class="mb-4">
-            <Checkbox
-              v-model="task.hide_to_client"
-              label="Hide this task from client view"
-            />
-          </div>
-
-            
-            <Input
-              label="Task Name"
-              v-model="task.task_name"
-              type="text"
-              required
-              class="mb-4"
-            />
-
-           
-            <Select
-              v-model="task.task_type"
-              :options="[
-                { label: 'Select Task Type', value: '' },
-                { label: 'Internal', value: 'Internal' },
-                { label: 'Client', value: 'Client' }
-              ]"
-              required
-              class="mb-4"
-              @change="handleTaskTypeChange(index)"
-            />
-
-            <!-- New Fields for Each Task -->
-            <div class="grid grid-cols-2 gap-4 mb-4">
-              
-              <Select
-                v-model="task.assign_to"
-                :options="getAssignToOptions(task.task_type)"
-                label="Assign To"
-                required
-              />
-
-             
-              <Select
-                v-model="task.priority"
-                :options="priorityOptions"
-                label="Priority"
-                required
-              />
-            </div>
-
-            
-            <Input
-              label="Complete Within Days"
-              v-model="task.complete_within_days"
-              type="number"
-              min="1"
-              required
-              class="mb-4"
-            />
-
-            <!-- Date Range (disabled for child tasks) -->
-            <div class="grid grid-cols-2 gap-4 mb-4">
-              <Input
-                label="From Date"
-                v-model="task.from_date"
-                type="date"
-                :disabled="task.is_child"
-                :required="!task.is_child"
-              />
-              <Input
-                label="To Date"
-                v-model="task.to_date"
-                type="date"
-                :disabled="task.is_child"
-                :required="!task.is_child"
-              />
-            </div>
-
-            
-            <Textarea
-              label="Description"
-              v-model="task.description"
-              rows="3"
-            />
-          </div>
+          <!-- To Date -->
+          <Input
+            label="To Date"
+            v-model="task.to_date"
+            type="date"
+            :disabled="task.is_child"
+            :required="!task.is_child"
+          />
         </div>
 
-        
-        <Button
-          type="button"
-          @click="addTask"
-          variant="outline"
-          class="w-full mb-4"
-        >
-          + Add Task
-        </Button>
-
-        
-        <div class="flex gap-3">
-          <Button
-            type="button"
-            @click="cancel"
-            variant="outline"
-            class="flex-1"
-            :disabled="submitting"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            variant="solid"
-            theme="gray"
-            class="flex-1"
-            :loading="submitting"
-          >
-            {{ submitting ? 'Creating...' : 'Create Activity' }}
-          </Button>
-        </div>
-      </form>
+        <!-- Description -->
+        <Textarea
+          label="Description"
+          v-model="task.description"
+          rows="3"
+        />
+      </div>
     </div>
+
+    <!-- Add Task Button -->
+    <Button
+      type="button"
+      @click="addTask"
+      variant="outline"
+      class="w-full mb-4"
+    >
+      + Add Task
+    </Button>
+
+    <!-- Form Actions -->
+    <div class="flex gap-3">
+      <Button
+        type="button"
+        @click="cancel"
+        variant="outline"
+        class="flex-1"
+        :disabled="submitting"
+      >
+        Cancel
+      </Button>
+      <Button
+        type="submit"
+        variant="solid"
+        theme="gray"
+        class="flex-1"
+        :loading="submitting"
+      >
+        {{ submitting ? 'Creating...' : 'Create Activity' }}
+      </Button>
+    </div>
+  </form>
+</div>
   </div>
 </template>
 

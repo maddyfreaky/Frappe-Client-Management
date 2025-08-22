@@ -131,6 +131,7 @@ def create_activity_from_template(template_name, client, is_recurring, recurring
                 recipients=[user_email],
                 subject=subject,
                 message=message,
+                now=True
                 
             )
 
@@ -501,4 +502,120 @@ def notify_child_activity_tasks(activity_name, parent_task_name):
             reference_name=activity.name,
             delayed=False
         )
+
+@frappe.whitelist()
+def get_task_with_comments(task_id):
+    """
+    Returns task details with appropriate comments based on user role
+    """
+    try:
+        # Validate input
+        if not task_id or not isinstance(task_id, str):
+            print("no task id")
+            return {
+                "error": True,
+                "message": "Invalid task ID provided",
+                "task_id": task_id
+            }
+        
+        
+        try:
+            task_exists = frappe.db.sql("""
+                SELECT name FROM `tabActivity Tasks` WHERE name = %s
+            """, task_id)
+            
+            if not task_exists:
+                return {
+                    "error": True,
+                    "message": "Task not found",
+                    "task_id": task_id
+                }
+        except Exception as db_error:
+            frappe.log_error(_(f"Database error checking task existence: {str(db_error)}"), "Task API Error")
+            return {
+                "error": True,
+                "message": "Database error while checking task",
+                "task_id": task_id
+            }
+        
+        
+        try:
+            task = frappe.get_doc("Activity Tasks", task_id)
+        except frappe.DoesNotExistError:
+            print("no task")
+            return {
+                "error": True,
+                "message": "Task document not found",
+                "task_id": task_id
+            }
+        
+        
+        activity_name = task.parent
+        print(activity_name,"activity")
+        activity_realname = frappe.get_doc("Activity", activity_name)
+        print(activity_realname,"activity real")
+        if not activity_name:
+            print("not activity")
+            return {
+                "error": True,
+                "message": "No activity linked to this task",
+                "task_id": task_id,
+                "task_name": task.task_name
+            }
+        
+        
+        try:
+            user_role = frappe.db.get_value("User", frappe.session.user, "role_profile_name")
+            is_client = user_role == "Client"
+        except:
+            is_client = False
+        
+        
+        try:
+            comments = frappe.db.sql("""
+                SELECT 
+                    ac.comment, 
+                    ac.comment_type, 
+                    ac.comment_by, 
+                    ac.creation,
+                    u.full_name as user_fullname
+                FROM `tabActivity Comment` ac
+                LEFT JOIN `tabUser` u ON ac.comment_by = u.name
+                WHERE ac.activity = %s
+                ORDER BY ac.creation DESC
+            """, activity_name, as_dict=True)
+            print("comments", comments)
+        except Exception as comment_error:
+            print("no comments", comment_error)
+            frappe.log_error(_(f"Error fetching comments: {str(comment_error)}"), "Task API Error")
+            comments = []
+        
+        
+        response = {
+            "error": False,
+            "task_details": {
+                "name": task.name,
+                "task_name": task.task_name,
+                "status": task.status,
+                "priority": task.priority,
+                "from_date": task.from_date,
+                "to_date": task.to_date,
+                "description": task.description,
+                "activity_name": activity_realname.activity_name
+            },
+            "is_client": is_client,
+            "external_comments": [c for c in comments if c.get("comment_type") == "External"],
+            "internal_comments": [c for c in comments if c.get("comment_type") == "Internal"]
+        }
+        
+        return response
+        
+    except Exception as e:
+        print("last exception", e)
+        frappe.log_error(_(f"Unexpected error in get_task_with_comments for task {task_id}: {str(e)}"), "Task API Error")
+        return {
+            "error": True,
+            "message": "An unexpected error occurred. Please try again later.",
+            "task_id": task_id
+        }
 

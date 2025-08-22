@@ -10,11 +10,29 @@
     </div>
 
     
-
     <!-- Tasks Table -->
     <div v-if="!loading" class="bg-white rounded-lg shadow overflow-hidden">
+
       <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
+         <!-- Search Field -->
+    <div class="mt-4">
+      <div class="relative rounded-md shadow-sm max-w-md">
+        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        <input
+          v-model="searchQuery"
+          type="text"
+          class="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2"
+          placeholder="Search ..."
+          @input="filterTasks"
+        />
+      </div>
+    </div>
+
+        <table class="min-w-full divide-y divide-gray-200 mt-5">
           <thead class="bg-gray-50">
             <tr>
               <th v-for="column in columns" :key="column.key" scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -25,16 +43,19 @@
         </th> 
             </tr>
           </thead>
+       
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="task in tasks" :key="task.name" :class="{'opacity-50': isTaskDisabled(task)}">
-              <td class="px-6 py-4 whitespace-nowrap">
-                <a href="#" @click.prevent="openTaskModal(task)" class="text-indigo-600 hover:text-indigo-900">
-                  {{ task.task_name }}
-                </a>
-              </td>
+            <tr v-for="task in paginatedTasks" :key="task.name" :class="{'opacity-50': isTaskDisabled(task)}">
+             
               <td class="px-6 py-4 whitespace-nowrap">
                 {{ task.activity_name }}
               </td>
+
+              <td class="px-6 py-4 whitespace-nowrap">
+              <router-link :to="`/tasks/${task.name}`" class="text-indigo-600 hover:text-indigo-900">
+                {{ task.task_name }}
+              </router-link>
+            </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 {{ formatDate(task.from_date) }}
               </td>
@@ -46,31 +67,34 @@
                   {{ task.priority }}
                 </span>
               </td>
+             
               <td class="px-6 py-4 whitespace-nowrap">
-                <div class="relative">
-                  <select 
-                    v-model="task.status" 
-                    @focus="previousStatus = task.status"
-                    @change="updateStatus(task)"
-                    :disabled="isTaskDisabled(task) || task.updating"
-                    class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  >
-                    <option v-for="option in statusOptions" :key="option" :value="option">
-                      {{ option }}
-                    </option>
-                  </select>
-                  <svg 
-                    v-if="task.updating"
-                    class="animate-spin h-5 w-5 text-indigo-600 absolute right-2 top-2" 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    fill="none" 
-                    viewBox="0 0 24 24"
-                  >
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                </div>
-              </td>
+  <div class="relative">
+    <select 
+      v-model="task.status" 
+      @focus="previousStatus = task.status"
+      @change="handleStatusChange(task)"
+      :disabled="isTaskDisabled(task) || task.updating"
+      class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+    >
+      <option v-for="option in statusOptions" :key="option" :value="option">
+        {{ option }}
+      </option>
+    </select>
+    <svg 
+      v-if="task.updating"
+      class="animate-spin h-5 w-5 text-indigo-600 absolute right-2 top-2" 
+      xmlns="http://www.w3.org/2000/svg" 
+      fill="none" 
+      viewBox="0 0 24 24"
+    >
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+  </div>
+</td>
+            
+            
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex space-x-2">
                   <button 
@@ -88,7 +112,7 @@
                     class="p-1 rounded-md bg-green-100 text-green-800 hover:bg-green-200"
                     title="External Comments"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="CurrentColor">
                       <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd" />
                     </svg>
                   </button>
@@ -97,6 +121,92 @@
             </tr>
           </tbody>
         </table>
+        
+        <!-- Pagination Controls -->
+        <div class="flex items-center justify-between px-6 py-3 bg-white border-t border-gray-200">
+          <div class="flex-1 flex justify-between sm:hidden">
+            <button 
+              @click="currentPage = currentPage - 1" 
+              :disabled="currentPage === 1"
+              class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            >
+              Previous
+            </button>
+            <button 
+              @click="currentPage = currentPage + 1" 
+              :disabled="currentPage === totalPages"
+              class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            >
+              Next
+            </button>
+          </div>
+          <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+              <p class="text-sm text-gray-700">
+                Showing
+                <span class="font-medium">{{ (currentPage - 1) * pageSize + 1 }}</span>
+                to
+                <span class="font-medium">{{ Math.min(currentPage * pageSize, filteredTasks.length) }}</span>
+                of
+                <span class="font-medium">{{ filteredTasks.length }}</span>
+                results
+              </p>
+            </div>
+            <div>
+              <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <button 
+                  @click="currentPage = currentPage - 1" 
+                  :disabled="currentPage === 1"
+                  :class="{'opacity-50 cursor-not-allowed': currentPage === 1, 'hover:bg-gray-50': currentPage > 1}"
+                  class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500"
+                >
+                  <span class="sr-only">Previous</span>
+                  <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+                
+                <!-- Page numbers -->
+                <button 
+                  v-for="page in visiblePages" 
+                  :key="page"
+                  @click="currentPage = page"
+                  :class="{'z-10 bg-indigo-50 border-indigo-500 text-indigo-600': currentPage === page, 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50': currentPage !== page}"
+                  class="relative inline-flex items-center px-4 py-2 border text-sm font-medium"
+                >
+                  {{ page }}
+                </button>
+                
+                <button 
+                  @click="currentPage = currentPage + 1" 
+                  :disabled="currentPage === totalPages"
+                  :class="{'opacity-50 cursor-not-allowed': currentPage === totalPages, 'hover:bg-gray-50': currentPage < totalPages}"
+                  class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500"
+                >
+                  <span class="sr-only">Next</span>
+                  <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+              </nav>
+            </div>
+            
+            <!-- Page size selector -->
+            <div class="flex items-center">
+              <span class="text-sm text-gray-700 mr-2 text-nowrap">Rows per page:</span>
+              <select 
+                v-model="pageSize" 
+                @change="currentPage = 1"
+                class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+              >
+                <option v-for="option in pageSizeOptions" :key="option" :value="option">
+                  {{ option }}
+                </option>
+              </select>
+            </div>
+          </div>
+          
+        </div>
       </div>
     </div>
 
@@ -129,6 +239,9 @@
                       <a :href="comment.attachment" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
                         View Attachment
                       </a>
+                    </div>
+                    <div v-if="comment.is_temp" class="mt-1 text-xs text-gray-500">
+                      Posting...
                     </div>
                   </div>
                 </div>
@@ -241,12 +354,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { Button, Dialog, createResource } from 'frappe-ui'
 
 const columns = [
+    { label: 'Activity', key: 'activity_name' },
   { label: 'Task Name', key: 'task_name' },
-  { label: 'Activity', key: 'activity_name' },
   { label: 'From Date', key: 'from_date' },
   { label: 'To Date', key: 'to_date' },
   { label: 'Priority', key: 'priority' },
@@ -256,6 +369,7 @@ const columns = [
 const statusOptions = ['Not Started', 'Working', 'Completed']
 
 const tasks = ref([])
+const filteredTasks = ref([])
 const loading = ref(true)
 const errorMessage = ref('')
 const showTaskModal = ref(false)
@@ -278,16 +392,63 @@ const attachment = ref(null)
 const fileInput = ref(null)
 const currentActivity = ref({})
 
+// Search query - Moved to the top to avoid reference errors
+const searchQuery = ref('')
+
+// Pagination variables
+const currentPage = ref(1)
+const pageSize = ref(10)
+const pageSizeOptions = [5, 10, 20, 50]
+
+// Pagination computed properties
+const totalPages = computed(() => {
+  return Math.ceil(filteredTasks.value.length / pageSize.value)
+})
+
+const paginatedTasks = computed(() => {
+  const startIndex = (currentPage.value - 1) * pageSize.value
+  return filteredTasks.value.slice(startIndex, startIndex + pageSize.value)
+})
+
+const visiblePages = computed(() => {
+  const maxVisiblePages = 5
+  const halfVisible = Math.floor(maxVisiblePages / 2)
+  
+  let startPage = Math.max(1, currentPage.value - halfVisible)
+  let endPage = Math.min(totalPages.value, startPage + maxVisiblePages - 1)
+  
+  if (endPage - startPage + 1 < maxVisiblePages) {
+    startPage = Math.max(1, endPage - maxVisiblePages + 1)
+  }
+  
+  const pages = []
+  for (let i = startPage; i <= endPage; i++) {
+    pages.push(i)
+  }
+  
+  return pages
+})
+
+// Watch for changes to reset to first page
+watch(searchQuery, () => {
+  currentPage.value = 1
+})
+
+watch(filteredTasks, () => {
+  currentPage.value = 1
+})
+
 const openCommentModal = async (task, commentType) => {
-  resetCommentForm()
-  selectedCommentType.value = commentType
+  resetCommentForm();
+  selectedCommentType.value = commentType;
   currentActivity.value = {
     name: task.activity_docname,
     activity_name: task.activity_name
-  }
-  showCommentModal.value = true
-  await fetchComments()
-}
+  };
+  showCommentModal.value = true;
+  // Use explicit parameters when fetching comments
+  await fetchComments(task.activity_docname, commentType);
+};
 
 const closeCommentModal = () => {
   resetCommentForm()
@@ -325,16 +486,24 @@ const formatDateTime = (dateString) => {
   return date.toLocaleString() 
 }
 
-
-
-const fetchComments = async () => {
+const fetchComments = async (activityName = null, commentType = null) => {
   try {
+    // Use provided parameters or fall back to the component state
+    const activityNameToUse = activityName || currentActivity.value.name;
+    const commentTypeToUse = commentType || selectedCommentType.value;
+    
+    // Check if we have the required parameters
+    if (!activityNameToUse || !commentTypeToUse) {
+      console.error("Missing parameters for fetching comments");
+      return;
+    }
+
     const resource = createResource({
       url: 'client_management.client_management.doctype.activity_comment.activity_comment.get_activity_comments',
       method: 'GET',
       params: {
-        activity_name: currentActivity.value.name,
-        comment_type: selectedCommentType.value
+        activity_name: activityNameToUse,
+        comment_type: commentTypeToUse
       }
     });
 
@@ -351,8 +520,6 @@ const fetchComments = async () => {
   }
 };
 
-
-
 const handleFileUpload = (e) => {
   const file = e.target.files[0]
   if (file) {
@@ -367,10 +534,13 @@ const submitComment = async () => {
       return;
     }
 
+    // Store the comment text before resetting the form
+    const commentText = newComment.value.trim();
+
     const formData = new FormData();
     formData.append('activity_name', currentActivity.value.name);
     formData.append('comment_type', selectedCommentType.value);
-    formData.append('comment', newComment.value.trim());
+    formData.append('comment', commentText);
 
     if (attachment.value) {
       formData.append('file', attachment.value);
@@ -381,26 +551,19 @@ const submitComment = async () => {
       formData.append('csrf_token', window.frappe.csrf_token);
     }
 
-    // Create temporary comment
-    const tempId = 'temp-' + Date.now();
-    const currentUser = window.frappe?.session?.user || 'Unknown User';
-    console.log(currentUser,"Current user")
-    const userFullname =
-      window.frappe?.boot?.user_info?.[currentUser]?.fullname || currentUser.split('@')[0];
-
-    const tempComment = {
-      name: tempId,
-      comment: newComment.value.trim(),
-      comment_by: currentUser,
-      comment_by_fullname: userFullname,
-      user_fullname: userFullname,
+    // Show loading state
+    const loadingComment = {
+      name: 'loading-' + Date.now(),
+      comment: commentText,
+      comment_by: window.frappe?.session?.user || 'Unknown User',
+      comment_by_fullname: 'Posting...',
+      user_fullname: 'Posting...',
       comment_date: new Date().toISOString(),
-      is_temp: true,
+      is_loading: true,
       attachment: null,
     };
-
     
-    comments.value.unshift(tempComment);
+    comments.value.unshift(loadingComment);
     resetCommentForm();
 
     const response = await fetch(
@@ -412,32 +575,74 @@ const submitComment = async () => {
     );
 
     const result = await response.json();
+    console.log('API Response:', result);
 
-    if (result.success) {
-      const index = comments.value.findIndex(c => c.name === tempId);
-      if (index !== -1) {
-        comments.value[index] = {
-          name: result.comment_id,
-          comment: newComment.value.trim(),
-          comment_by: currentUser,
-          comment_by_fullname: result.user_fullname,
-          user_fullname: result.user_fullname,
-          comment_date: result.comment_date,
-          is_temp: false,
-          attachment: result.attachment_url || null,
-        };
+    if (result.message && result.message.success) {
+      // Remove loading comment
+      comments.value = comments.value.filter(c => !c.is_loading);
+      
+      // Add the new comment directly to the list instead of refreshing
+      const newCommentData = {
+        name: result.message.comment_id,
+        comment: commentText, // Use the stored comment text
+        comment_by: window.frappe?.session?.user || 'Unknown User',
+        comment_by_fullname: result.message.user_fullname,
+        user_fullname: result.message.user_fullname,
+        comment_date: result.message.comment_date,
+        attachment: result.message.attachment_url
+      };
+      
+      comments.value.unshift(newCommentData);
+      
+      // Show success message using Frappe notification (no alert)
+      if (typeof frappe !== 'undefined' && frappe.show_alert) {
+        frappe.show_alert({
+          message: result.message.message || 'Comment added successfully',
+          indicator: 'green'
+        }, 3);
       }
+      // Removed the alert() fallback
     } else {
-      comments.value = comments.value.filter(c => c.name !== tempId);
-      errorMessage.value = result.message || "Failed to submit comment";
+      // Remove loading comment on error
+      comments.value = comments.value.filter(c => !c.is_loading);
+      
+      let errorMsg = "Failed to submit comment";
+      
+      if (result.message && result.message.message) {
+        errorMsg = result.message.message;
+      } else if (result.message) {
+        errorMsg = typeof result.message === 'string' ? result.message : "Server error occurred";
+      }
+      
+      errorMessage.value = errorMsg;
+      
+      // Show error message using Frappe notification (no alert)
+      if (typeof frappe !== 'undefined' && frappe.show_alert) {
+        frappe.show_alert({
+          message: errorMsg,
+          indicator: 'red'
+        }, 5);
+      }
+      // Removed the alert() fallback
     }
   } catch (error) {
     console.error("Comment submission failed:", error);
-    errorMessage.value = "Failed to submit comment. Please try again.";
+    // Remove loading comment on error
+    comments.value = comments.value.filter(c => !c.is_loading);
+    
+    const errorMsg = error.message || "Failed to submit comment. Please try again.";
+    errorMessage.value = errorMsg;
+    
+    // Show error message using Frappe notification (no alert)
+    if (typeof frappe !== 'undefined' && frappe.show_alert) {
+      frappe.show_alert({
+        message: errorMsg,
+        indicator: 'red'
+      }, 5);
+    }
+    // Removed the alert() fallback
   }
 };
-
-
 
 const createFileFormData = () => {
   const formData = new FormData()
@@ -476,8 +681,19 @@ const openTaskModal = (task) => {
 }
 
 // Update task status
+const handleStatusChange = async (task) => {
+  if (task.status === 'Completed') {
+    const confirmed = confirm('Are you sure you want to mark this task as Completed?');
+    if (!confirmed) {
+      task.status = previousStatus.value;
+      return;
+    }
+  }
+  await updateStatus(task);
+};
+
 const updateStatus = async (task) => {
-  task.updating = true
+  task.updating = true;
   
   try {
     const resource = createResource({
@@ -488,17 +704,47 @@ const updateStatus = async (task) => {
         task_name: task.name,
         status: task.status
       }
-    })
+    });
     
-    await resource.submit()
-    await fetchTasks() // Refresh the task list
+    await resource.submit();
+    await fetchTasks(); // Refresh the task list
+    
+    // Show success message
+    if (window.frappe) {
+      window.frappe.show_alert({
+        message: 'Task status updated successfully',
+        indicator: 'green'
+      }, 3);
+    }
   } catch (error) {
-    console.error("Status update failed:", error)
+    console.error("Status update failed:", error);
     // Revert the status in UI
-    task.status = previousStatus.value
+    task.status = previousStatus.value;
+    if (window.frappe) {
+      window.frappe.show_alert({
+        message: 'Failed to update task status',
+        indicator: 'red'
+      }, 5);
+    }
   } finally {
-    task.updating = false
+    task.updating = false;
   }
+};
+
+// Filter tasks
+const filterTasks = () => {
+  if (!searchQuery.value) {
+    filteredTasks.value = [...tasks.value]
+    return
+  }
+  
+  const query = searchQuery.value.toLowerCase()
+  filteredTasks.value = tasks.value.filter(task => 
+    task.activity_name.toLowerCase().includes(query) ||
+    task.task_name.toLowerCase().includes(query) ||
+    task.priority.toLowerCase().includes(query) ||
+    task.status.toLowerCase().includes(query)
+  )
 }
 
 // Fetch tasks
@@ -520,6 +766,7 @@ const fetchTasks = async () => {
         parent_status: task.parent_status || null,
         updating: false // Initialize updating flag
       }))
+      filteredTasks.value = [...tasks.value]
     } else {
       throw new Error(response.message || 'Failed to load tasks')
     }

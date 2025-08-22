@@ -66,8 +66,11 @@
           <div class="col-span-3">{{ formatDate(template.creation) }}</div>
           <div class="col-span-2 flex justify-end gap-2">
             <Button icon="edit" size="sm" @click="editTemplate(template.name)" />
-            <Button icon="trash-2" size="sm" @click="deleteTemplate(template.name)" />
-             <Button 
+<Button 
+  icon="trash-2" 
+  size="sm" 
+  @click="deleteTemplate(template.name, template.template_name || template.title || 'this template')" 
+/>             <Button 
             @click="assignTemplate(template.name)" 
             size="sm" 
             variant="outline"
@@ -234,14 +237,23 @@ const templatesResource = createResource({
 
 
 const formatDate = date => new Date(date).toLocaleDateString()
-const deleteTemplate = async name => {
-  const res = createResource({
-    url: 'frappe.client.delete',
-    params: { doctype: 'Template', name }
-  })
-  await res.submit()
-  templatesResource.reload()
-}
+
+
+const deleteTemplate = async (name, displayName) => {
+  // Show confirmation with the template's display name
+  const userConfirmed = confirm(`Are you sure you want to delete "${displayName}"?`);
+  
+  if (userConfirmed) {
+    const res = createResource({
+      url: 'frappe.client.delete',
+      params: { doctype: 'Template', name }  // Still uses the docname for deletion
+    });
+    await res.submit();
+    templatesResource.reload();
+  }
+};
+
+
 const setSort = field => {
   if (sortField.value === field) {
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'

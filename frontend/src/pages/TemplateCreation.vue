@@ -10,134 +10,123 @@
 
     <div class="card">
       <h2 class="card-header">Create New Template</h2>
-      <form @submit.prevent="submitForm" class="card-body">
-        
-        <Input
-          label="Template Name"
-          v-model="formData.template_name"
-          type="text"
-          required
-          class="mb-4"
+     <form @submit.prevent="submitForm" class="card-body">
+  <Input
+    label="Template Name"
+    v-model="formData.template_name"
+    type="text"
+    required
+    class="mb-4"
+  />
+
+  <div v-for="(task, index) in formData.tasks" :key="index" class="card mb-4 relative">
+    <div v-if="index > 0" class="absolute top-2 right-2">
+      <Button @click="removeTask(index)" variant="ghost" size="sm">
+        Remove
+      </Button>
+    </div>
+    
+    <h3 class="card-header">Task {{ index + 1 }}</h3>
+    <div class="card-body">
+      <!-- Is Child Task Checkbox -->
+      <div v-if="index > 0" class="mb-4">
+        <Checkbox
+          v-model="task.is_child"
+          @change="handleChildToggle(task, index)"
+          label="Is Child Task"
         />
+      </div>
 
-        
-        <div v-for="(task, index) in formData.tasks" :key="index" class="card mb-4 relative">
-          <div v-if="index > 0" class="absolute top-2 right-2">
-            <Button @click="removeTask(index)" variant="ghost" size="sm">
-              Remove
-            </Button>
-          </div>
-          
-          <h3 class="card-header">Task {{ index + 1 }}</h3>
-          <div class="card-body">
-            
-            <div v-if="index > 0" class="mb-4">
-              <Checkbox
-                    v-model="task.is_child"
-                    @change="handleChildToggle(task, index)"
-                    label="Is Child Task"
-                    />
-            </div>
+      <!-- Parent Task Dropdown (if child task) -->
+      <div v-if="task.is_child" class="mb-4">
+        <Select
+          v-model="task.parent_task"
+          :options="[
+            { label: 'Select Parent Task', value: '' },
+            ...availableParentTasks(index).map((parent, parentIndex) => ({
+              label: parent.task_name || `Task ${parentIndex + 1}`,
+              value: parentIndex
+            }))
+          ]"
+          label="Parent Task"
+          required
+        />
+      </div>
 
-            
-            <div v-if="task.is_child" class="mb-4">
-              <Select
-                v-model="task.parent_task"
-                :options="[
-                    { label: 'Select Parent Task', value: '' },
-                    ...availableParentTasks(index).map((parent, parentIndex) => ({
-                    label: parent.task_name || `Task ${parentIndex + 1}`,
-                    value: parentIndex
-                    }))
-                ]"
-                label="Parent Task"
-                required
-                />
-            </div>
+      <!-- Task Name -->
+      <Input
+        label="Task Name"
+        v-model="task.task_name"
+        type="text"
+        required
+        class="mb-4"
+      />
 
-            
-            <Input
-              label="Task Name"
-              v-model="task.task_name"
-              type="text"
-              required
-              class="mb-4"
-            />
+      <!-- NEW: 4 Fields in One Row -->
+      <div class="grid grid-cols-4 gap-4 ">
+        <Select class="mt-3"
+          v-model="task.task_type"
+          :options="[
+            { label: 'Task Type', value: '' },
+            { label: 'Internal', value: 'Internal' },
+            { label: 'Client', value: 'Client' }
+          ]"
+          required
+        />
+        <Input
+          label="Complete Within Days"
+          v-model="task.complete_within_days"
+          type="number"
+          min="1"
+          required
+        />
+        <Input
+          label="From Date"
+          v-model="task.from_date"
+          type="date"
+          :disabled="task.is_child"
+          :required="!task.is_child"
+        />
+        <Input
+          label="To Date"
+          v-model="task.to_date"
+          type="date"
+          :disabled="task.is_child"
+          :required="!task.is_child"
+        />
+      </div>
 
-            
-            <Select
-            v-model="task.task_type"
-            :options="[
-                { label: 'Select Task Type', value: '' },
-                { label: 'Internal', value: 'Internal' },
-                { label: 'Client', value: 'Client' }
-            ]"
-            required
-            class="mb-4"
-            />
+      <!-- Description -->
+      <Textarea
+        label="Description"
+        v-model="task.description"
+        rows="3"
+      />
+    </div>
+  </div>
 
-            
-            <Input
-              label="Complete Within Days"
-              v-model="task.complete_within_days"
-              type="number"
-              min="1"
-              required
-              class="mb-4"
-            />
+  <!-- Add Task Button -->
+  <Button
+    type="button"
+    @click="addTask"
+    variant="outline"
+    class="w-full mb-4"
+  >
+    + Add Task
+  </Button>
 
-            
-            <div class="grid grid-cols-2 gap-4 mb-4">
-              <Input
-                label="From Date"
-                v-model="task.from_date"
-                type="date"
-                :disabled="task.is_child"
-                :required="!task.is_child"
-              />
-              <Input
-                label="To Date"
-                v-model="task.to_date"
-                type="date"
-                :disabled="task.is_child"
-                :required="!task.is_child"
-              />
-            </div>
-
-           
-            <Textarea
-              label="Description"
-              v-model="task.description"
-              rows="3"
-            />
-          </div>
-        </div>
-
-        
-        <Button
-          type="button"
-          @click="addTask"
-          variant="outline"
-          class="w-full mb-4"
-        >
-          + Add Task
-        </Button>
-
-        
-        <Button
-          type="submit"
-          :variant="'solid'"
-    :ref_for="true"
+  <!-- Submit Button -->
+  <Button
+    type="submit"
+    variant="solid"
     theme="gray"
     size="sm"
-    label="Button"
-
-          :loading="loading"
-          class="w-full"
-        >
-          {{ loading ? 'Saving...' : 'Create Template' }}
-        </Button>
-      </form>
+    :loading="loading"
+    class="w-full"
+  >
+    {{ loading ? 'Saving...' : 'Create Template' }}
+  </Button>
+</form>
     </div>
   </div>
 </template>

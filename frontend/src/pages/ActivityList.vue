@@ -57,9 +57,9 @@
                <button @click="viewActivity(activity.name)" class="text-indigo-600 hover:text-indigo-900 mr-3">
                 View
                 </button>
-                <button @click="confirmDelete(activity)" class="text-red-600 hover:text-red-900">
-                  Delete
-                </button>
+               <button @click="confirmDelete(activity)" class="text-red-600 hover:text-red-900">
+    Delete
+  </button>
               </td>
             </tr>
           </tbody>
@@ -101,30 +101,39 @@
     </div>
 
     
-    <Dialog
-      v-model="showDeleteDialog"
-      title="Confirm Delete"
-      :dismissable="true"
-    >
-    
-      <p>Are you sure you want to delete this activity?</p>
-      <template #actions>
-        <Button
-          variant="solid"
-          theme="red"
-          :loading="deleting"
-          @click="deleteActivity"
-        >
-          Delete
-        </Button>
-        <Button
-          variant="outline"
-          @click="showDeleteDialog = false"
-        >
-          Cancel
-        </Button>
-      </template>
-    </Dialog>
+   <div v-if="showDeleteDialog" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+      <!-- Dialog Header -->
+      <div class="border-b px-6 py-4">
+        <h3 class="text-lg font-medium text-gray-900">Confirm Delete</h3>
+      </div>
+      
+      <!-- Dialog Body -->
+      <div class="p-6">
+        <p class="text-gray-700 mb-6">Are you sure you want to delete this activity?</p>
+        
+        <!-- Dialog Actions -->
+        <div class="flex justify-end space-x-3">
+          <button
+            @click="showDeleteDialog = false"
+            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            @click="deleteActivity"
+            class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+            :disabled="deleting"
+          >
+            <span v-if="deleting">Deleting...</span>
+            <span v-else>Delete</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
   </div>
 </template>
 
@@ -225,15 +234,13 @@ const editActivity = (activityName) => {
   })
 }
 
-
 const confirmDelete = (activity) => {
-  activityToDelete.value = activity
-  showDeleteDialog.value = true
-}
-
+  activityToDelete.value = activity;
+  showDeleteDialog.value = true;
+};
 
 const deleteActivity = async () => {
-  deleting.value = true
+  deleting.value = true;
   try {
     const resource = createResource({
       url: 'frappe.client.delete',
@@ -242,17 +249,17 @@ const deleteActivity = async () => {
         doctype: 'Activity',
         name: activityToDelete.value.name
       }
-    })
+    });
     
-    await resource.submit()
-    showDeleteDialog.value = false
-    fetchActivities() 
+    await resource.submit();
+    showDeleteDialog.value = false;
+    fetchActivities();
   } catch (error) {
-    errorMessage.value = error.message || 'Failed to delete activity'
+    errorMessage.value = error.message || 'Failed to delete activity';
   } finally {
-    deleting.value = false
+    deleting.value = false;
   }
-}
+};
 
 
 onMounted(() => {
