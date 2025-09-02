@@ -62,7 +62,7 @@
           class="grid grid-cols-12 gap-4 p-3 border-b text-sm hover:bg-accent/20 transition"
         >
           <div class="col-span-4 font-medium truncate">{{ template.template_name }}</div>
-          <div class="col-span-3">{{ template.owner }}</div>
+          <div class="col-span-3">{{ getUsername(template.owner) }}</div>
           <div class="col-span-3">{{ formatDate(template.creation) }}</div>
           <div class="col-span-2 flex justify-end gap-2">
             <Button icon="edit" size="sm" @click="editTemplate(template.name)" />
@@ -114,12 +114,12 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { Button, createResource, Input, Dropdown } from 'frappe-ui'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-
+const userMap = ref({})
 const assignTemplate = (templateName) => {
   router.push({
     name: 'ActivityForm',
@@ -216,6 +216,41 @@ const visiblePages = computed(() => {
   if (end - start < max - 1) start = Math.max(1, end - max + 1)
   for (let i = start; i <= end; i++) pages.push(i)
   return pages
+})
+
+
+const getUsername = (email) => {
+  if (!email) return 'Unknown'
+  return userMap.value[email]?.username || email.split('@')[0]
+}
+
+const fetchUserData = async () => {
+  const userResource = createResource({
+    url: 'frappe.client.get_list',
+    params: {
+      doctype: 'User',
+      fields: ['email', 'username'],
+      limit: 0
+    },
+    auto: true,
+    onSuccess(data) {
+      // Create a mapping of email to username
+      const mapping = {}
+      data.forEach(user => {
+        mapping[user.email] = {
+          username: user.username
+        }
+      })
+      userMap.value = mapping
+    },
+    onError(error) {
+      console.error('Error fetching user data:', error)
+    }
+  })
+}
+
+onMounted(() => {
+  fetchUserData()
 })
 
 // Load data

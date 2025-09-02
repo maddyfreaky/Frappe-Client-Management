@@ -15,6 +15,12 @@
     <div class="flex flex-row space-x-2 mt-4">
       <Button @click="showDialog = true">Open Dialog</Button>
       <Button @click="session.logout.submit()">Logout</Button>
+      <Button
+        icon-left="plus"
+        @click="router.push({ name: 'Template Tasks' })"
+      >
+        New Activity
+      </Button>
     </div>
 
     <!-- Dialog -->
@@ -27,6 +33,9 @@ import { Dialog } from "frappe-ui"
 import { createResource } from "frappe-ui"
 import { ref } from "vue"
 import { session } from "../data/session"
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const ping = createResource({
 	url: "ping",

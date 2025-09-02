@@ -1,18 +1,19 @@
 import { userResource } from "@/data/user"
 import { createRouter, createWebHistory } from "vue-router"
 import { session } from "./data/session"
+import Sidebarlayout from "@/Layouts/SidebarLayout.vue"
 
 const routes = [
 	{
-		path: "/",
+		path:"/",
+		component: Sidebarlayout,
+		children:[
+	{
+		path: "",
 		name: "Home",
 		component: () => import("@/pages/Home.vue"),
 	},
-	{
-		name: "Login",
-		path: "/account/login",
-		component: () => import("@/pages/Login.vue"),
-	},
+	
 	{
 		name: "Template",
 		path: "/template",
@@ -62,6 +63,19 @@ const routes = [
 		path: '/tasks/:id',
 		component: () => import("@/pages/TaskDetailPage.vue"),
 		props: true
+	},
+	{
+        path: "frontend/edit-client/:name",
+        name: "EditClientFile",
+        component: () => import("@/pages/EditClientFile.vue"),
+        props: true
+    },
+]
+},
+	{
+		name: "Login",
+		path: "/account/login",
+		component: () => import("@/pages/Login.vue"),
 	},
 ]
 

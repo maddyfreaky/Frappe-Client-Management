@@ -1,19 +1,19 @@
 <template>
   <div class="container mx-auto px-4 py-8">
-    
+    <!-- Form Section -->
     <div class="grid grid-cols-1 lg:grid-cols-8 gap-8 mb-8">
       <div class="lg:col-span-8">
         <div class="bg-white p-6 shadow-md rounded-md">
           <h2 class="text-xl font-semibold text-center mb-6">Create Client</h2>
          
           <form @submit.prevent="submitForm" class="space-y-4 sub">
-            
+            <!-- Client Name -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Client Name*</label>
               <TextInput v-model="form.client_name" required />
             </div>
  
-            
+            <!-- Contact Person -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Select Contact Person*</label>
               <div class="flex">
@@ -26,31 +26,14 @@
                     {{ user.full_name || user.name }}
                   </option>
                 </select>
-                <!-- <button
-                  type="button"
-                  @click="handleAddContactPerson"
-                  class="bg-black text-white px-3 py-1 rounded-r-md hover:bg-gray-800"
-                >
-                  +
-                </button> -->
+             
               </div>
             </div>
  
-           
-            <div v-if="fetchedContactInfo.length" class="space-y-3">
-              <div
-                v-for="(info, idx) in fetchedContactInfo"
-                :key="idx"
-                class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-100 p-3 rounded border border-gray-200"
-              >
-                <TextInput :modelValue="info.full_name" label="Name" readonly />
-                <TextInput v-model="info.email" label="Email" />
-              </div>
-            </div>
- 
+       
          
  
-            
+            <!-- Selected Users -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Selected Users*</label>
               <select
@@ -64,14 +47,14 @@
               </select>
             </div>
  
-            
+            <!-- Submit -->
         <div class="pt-4">
   <button type="submit" class="bg-black text-white px-2 py-2 text-sm rounded">
     Submit
   </button>
 </div>
  
-            
+            <!-- Alert -->
             <Alert
               v-if="message"
               :variant="status === 'success' ? 'green' : 'red'"
@@ -84,7 +67,7 @@
       </div>
     </div>
  
-   
+    <!-- Table Section -->
     <div class="grid grid-cols-1 lg:grid-cols-8 gap-8">
       <div class="lg:col-span-8">
         <div class="bg-white p-6 shadow-md rounded-md">
@@ -93,14 +76,7 @@
             <table class="min-w-full bg-white border border-gray-200 rounded-lg">
               <thead class="bg-gray-100">
                 <tr>
-                  <th class="py-3 px-4 border-b text-left w-10">
-                    <input
-                      type="checkbox"
-                      v-model="selectAll"
-                      @change="toggleSelectAll"
-                      class="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
-                    >
-                  </th>
+                 
                   <th class="py-3 px-4 border-b text-left">Client Name</th>
                   <th class="py-3 px-4 border-b text-left">Created At</th>
                   <th class="py-3 px-4 border-b text-left">Created By</th>
@@ -109,20 +85,14 @@
               </thead>
               <tbody>
                 <tr v-for="client in paginatedClients" :key="client.name" class="hover:bg-gray-50">
-                  <td class="py-3 px-4 border-b">
-                    <input
-                      type="checkbox"
-                      v-model="selectedClients"
-                      :value="client.name"
-                      class="h-4 w-4 text-blue-600 rounded focus:ring-blue-500 border-gray-300"
-                    >
-                  </td>
+                 
                   <td class="py-3 px-4 border-b">{{ client.client_name }}</td>
                   <td class="py-3 px-4 border-b">{{ client.created_at }}</td>
                   <td class="py-3 px-4 border-b">{{ client.created_by }}</td>
                   <td class="py-3 px-4 border-b">
+                 
                     <div class="flex space-x-2">
-                      
+                      <!-- View Icon -->
                       <button
                         @click="viewClient(client)"
                         class="text-dark-500 hover:text-dark-700 p-1 rounded hover:bg-dark-50"
@@ -134,7 +104,7 @@
                         </svg>
                       </button>
                      
-                      
+                      <!-- Edit Icon -->
                 <button
   @click="editClient(client)"
   class="text-dark-500 hover:text-dark-700 p-1 rounded hover:bg-dark-50"
@@ -146,7 +116,7 @@
 </button>
  
                      
-                     
+                      <!-- Delete Icon -->
                       <button
     @click="confirmDelete(client)"
     class="text-dark-500 hover:text-dark-700 p-1 rounded hover:bg-dark-50"
@@ -165,20 +135,8 @@
               </tbody>
             </table>
  
-            
-            <div v-if="selectedClients.length > 0" class="mt-4 p-3 bg-blue-50 rounded-lg">
-              <div class="flex items-center justify-between">
-                <span class="text-sm text-blue-700">
-                  {{ selectedClients.length }} item(s) selected
-                </span>
-                <button
-                  @click="handleBulkAction"
-                  class="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
-                >
-                  Bulk Action
-                </button>
-              </div>
-            </div>
+            <!-- Selected items actions -->
+           
  
             <!-- Pagination -->
             <div class="flex items-center justify-between mt-4">
@@ -211,7 +169,6 @@
   </div>
  
  
-  
 <div v-if="viewModalVisible" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
   <div class="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-auto">
     <h2 class="text-xl font-bold mb-4">Client Details</h2>
@@ -265,17 +222,17 @@
 <script setup>
 import { ref, reactive, onMounted, nextTick, computed, watch } from 'vue'
 import { TextInput, Button, Alert } from 'frappe-ui'
-import { useRouter } from 'vue-router' 
+import { useRouter } from 'vue-router' //
  
  
 const users = ref([])
-const fetchedContactInfo = ref([])
+// const fetchedContactInfo = ref([])
 const clients = ref([])
 const currentPage = ref(1)
 const pageSize = ref(10)
 const selectedClients = ref([])
 const selectAll = ref(false)
-const router = useRouter() 
+const router = useRouter() // Add this line
  
  
 const form = reactive({
@@ -291,16 +248,16 @@ const contactPersonRef = ref(null)
 const selectedUsersRef = ref(null)
  
  
-
+// Date formatting function
 const formatDate = (dateString) => {
   if (!dateString) return 'Unknown date'
  
   try {
     const date = new Date(dateString)
-    if (isNaN(date.getTime())) return dateString 
+    if (isNaN(date.getTime())) return dateString // Return original if invalid
    
     const day = String(date.getDate()).padStart(2, '0')
-    const month = String(date.getMonth() + 1).padStart(2, '0') 
+    const month = String(date.getMonth() + 1).padStart(2, '0') // Months are 0-based
     const year = date.getFullYear()
    
     const hours = String(date.getHours()).padStart(2, '0')
@@ -310,13 +267,13 @@ const formatDate = (dateString) => {
     return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`
   } catch (error) {
     console.error('Error formatting date:', error)
-    return dateString 
+    return dateString // Return original if error
   }
 }
  
  
  
-
+// Pagination calculations
 const totalPages = computed(() => Math.ceil(clients.value.length / pageSize.value))
 const startItem = computed(() => (currentPage.value - 1) * pageSize.value + 1)
 const endItem = computed(() => Math.min(currentPage.value * pageSize.value, clients.value.length))
@@ -325,6 +282,8 @@ const paginatedClients = computed(() => {
   const end = start + pageSize.value
   return clients.value.slice(start, end)
 })
+ 
+ 
 const viewClient = async (client) => {
   try {
     const response = await fetch(
@@ -338,31 +297,33 @@ const viewClient = async (client) => {
    
     const clientData = result.message;
    
-    
+    // Debug log to check what's being returned
+    console.log("Client Data:", clientData);
+   
+    // Format contact persons details - ensure we're using the correct property name
     let contactPersonsDetails = 'None';
     if (clientData.contact_persons && clientData.contact_persons.length > 0) {
       contactPersonsDetails = clientData.contact_persons.map(person => `
-        - Name: ${person.full_name}
-        Email: ${person.email}
+        - Name: ${person.full_name || 'Not specified'}
+        Email: ${person.email || 'Not specified'}
         Mobile: ${person.mobile_no || 'Not specified'}
         Gender: ${person.gender || 'Not specified'}
-        Bio: ${person.bio}
+        Bio: ${person.bio || 'Not specified'}
       `).join('\n\n');
     }
    
-    
+    // Rest of your code...
     let selectedUsersDetails = 'None';
     if (clientData.selected_users && clientData.selected_users.length > 0) {
       selectedUsersDetails = clientData.selected_users.map(user => `
-        - Name: ${user.full_name}
-        Email: ${user.email}
+        - Name: ${user.full_name || 'Not specified'}
+        Email: ${user.email || 'Not specified'}
         Mobile: ${user.mobile_no || 'Not specified'}
         Gender: ${user.gender || 'Not specified'}
-        Bio: ${user.bio}
+        Bio: ${user.bio || 'Not specified'}
       `).join('\n\n');
     }
    
-    
     const alertMessage = `
       CLIENT DETAILS
       ==============
@@ -378,7 +339,6 @@ const viewClient = async (client) => {
       Created By: ${clientData.created_by || 'Unknown'}
     `;
    
-    
     alert(alertMessage);
    
   } catch (error) {
@@ -387,7 +347,7 @@ const viewClient = async (client) => {
   }
 };
 const editClient = (client) => {
-  
+ 
   router.push({
     name: 'EditClientFile',
     params: { name: client.name }
@@ -412,18 +372,18 @@ const deleteClient = async (client) => {
     const result = await response.json();
  
     if (response.ok) {
-      
+      // Remove from client list
       clients.value = clients.value.filter(c => c.name !== client.name);
       selectedClients.value = selectedClients.value.filter(name => name !== client.name);
  
-      
+      // Recalculate pagination
       const totalRemaining = clients.value.length;
       const newTotalPages = Math.ceil(totalRemaining / pageSize.value);
       if (currentPage.value > newTotalPages) {
         currentPage.value = newTotalPages || 1;
       }
  
-      
+      // ✅ Show success message using Frappe or fallback
       if (typeof frappe !== 'undefined' && frappe.show_alert) {
         frappe.show_alert({
           message: (typeof __ === 'function' ? __('Data deleted successfully') : 'Data deleted successfully'),
@@ -440,33 +400,22 @@ const deleteClient = async (client) => {
   } catch (error) {
     console.error('Delete failed:', error);
  
-    
+    // ❌ Show error message using Frappe or fallback
     if (typeof frappe !== 'undefined' && frappe.show_alert) {
       frappe.show_alert({
         message: (typeof __ === 'function' ? __('Error: ') : 'Error: ') + error.message,
         indicator: 'red'
       }, 5);
     } else {
-      alert('Error: ' + error.message); 
+      alert('Error: ' + error.message); // fallback if frappe not loaded
     }
   }
 };
  
  
-
-const toggleSelectAll = () => {
-  if (selectAll.value) {
-    selectedClients.value = paginatedClients.value.map(client => client.name)
-  } else {
-    selectedClients.value = []
-  }
-}
  
-const handleBulkAction = () => {
-  alert(`Performing action on selected clients: ${selectedClients.value.join(', ')}`)
-}
  
-
+// Watch for changes in selection
 watch(selectedClients, (newVal) => {
   selectAll.value = newVal.length === paginatedClients.value.length && paginatedClients.value.length > 0
 }, { deep: true })
@@ -483,7 +432,7 @@ const initializeSelect2 = (element, formField) => {
  
 const fetchUsers = async () => {
   try {
-    const res = await fetch('/api/method/client_management.api.user.get_users')
+    const res = await fetch('/api/method/client_management.client_management.doctype.clientformdata.clientformdata.get_users')
     const json = await res.json()
     users.value = json.message || []
  
@@ -498,6 +447,7 @@ const fetchUsers = async () => {
 }
  
 const fetchClients = async () => {
+  console.log("fetch clients");
   try {
     const res = await fetch('/api/method/client_management.client_management.doctype.clientformdata.clientformdata.get_all_clients')
     const json = await res.json()
@@ -515,25 +465,31 @@ const fetchClients = async () => {
   }
 }
  
-const handleAddContactPerson = async () => {
-  fetchedContactInfo.value = form.contact_person.map((name) => {
-    const user = users.value.find((u) => u.name === name)
-    return {
-      full_name: user?.full_name || user?.name,
-      email: `${user?.name}`,
  
-     
-     
-    }
-  })
-}
  
 const submitForm = async () => {
+  // Get selected contact persons
+  const contactPersons = contactPersonRef.value
+    ? Array.from(contactPersonRef.value.selectedOptions).map(opt => {
+        const user = users.value.find(u => u.name === opt.value);
+        return {
+          user: user?.name,
+          full_name: user?.full_name || user?.name,
+          email: user?.email || `${user?.name}@example.com`
+        };
+      })
+    : [];
+ 
+  // Get selected users
+  const selectedUsers = selectedUsersRef.value
+    ? Array.from(selectedUsersRef.value.selectedOptions).map(opt => opt.value)
+    : [];
+ 
   const payload = {
     client_name: form.client_name,
-    contact_person: form.contact_person,
-    selected_users: form.selected_users,
-  }
+    contact_person: contactPersons,
+    selected_users: selectedUsers
+  };
  
   try {
     const response = await fetch(
@@ -546,32 +502,28 @@ const submitForm = async () => {
         },
         body: JSON.stringify({ data: JSON.stringify(payload) })
       }
-    )
+    );
  
-    const result = await response.json()
-    status.value = result.status
-    message.value = result.message
+    const result = await response.json();
+    status.value = result.status;
+    message.value = result.message;
  
     if (status.value === 'success') {
       if (window.frappe?.show_alert) {
-        window.frappe.show_alert({ message: result.message, indicator: 'green' }, 3)
+        window.frappe.show_alert({ message: result.message, indicator: 'green' }, 3);
       }
+      await fetchClients();
  
-      
-      form.client_name = ''
-      form.contact_person = []
-      form.selected_users = []
-      fetchedContactInfo.value = []
  
-      // Reset Select2 fields
-      $(contactPersonRef.value).val(null).trigger('change')
-      $(selectedUsersRef.value).val(null).trigger('change')
+      // Reset form
+      form.client_name = '';
+      $(contactPersonRef.value).val(null).trigger('change');
+      $(selectedUsersRef.value).val(null).trigger('change');
  
-      await fetchClients()
     }
   } catch (error) {
-    status.value = 'error'
-    message.value = 'An error occurred while submitting the form: ' + error.message
+    status.value = 'error';
+    message.value = 'An error occurred while submitting the form: ' + error.message;
   }
 }
  

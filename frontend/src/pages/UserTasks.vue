@@ -210,98 +210,120 @@
       </div>
     </div>
 
-    <!-- Comment Modal -->
-  <div v-if="showCommentModal" class="fixed inset-0 z-50 overflow-y-auto">
-    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-      <!-- Background overlay -->
-      <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-        <div class="absolute inset-0 bg-gray-500 opacity-75" @click="closeCommentModal"></div>
-      </div>
+  <!-- Comment Modal -->
+<div v-if="showCommentModal" class="fixed inset-0 z-50 overflow-y-auto">
+  <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+    <!-- Background overlay -->
+    <div class="fixed inset-0 transition-opacity" aria-hidden="true">
+      <div class="absolute inset-0 bg-gray-500 opacity-75" @click="closeCommentModal"></div>
+    </div>
 
-      <!-- Modal container -->
-      <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
-        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-          <div class="sm:flex sm:items-start">
-            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-              <h3 class="text-lg leading-6 font-medium text-gray-900">
-                {{ selectedCommentType }} Comments - Activity: {{ currentActivity.activity_name }}
-              </h3>
-              <div class="mt-4">
-                <!-- Comments List -->
-                <div class="border rounded-lg p-4 max-h-96 overflow-y-auto mb-4">
-                  <div v-for="comment in comments" :key="comment.name" class="mb-4 last:mb-0">
-                    <div class="flex justify-between items-start">
-                      <div class="font-medium">{{ comment.user_fullname || comment.comment_by.split('@')[0] }}</div>
-                      <div class="text-sm text-gray-500">{{ formatDateTime(comment.comment_date) }}</div>
-                    </div>
-                    <div class="mt-1 text-sm text-gray-800">{{ comment.comment }}</div>
-                    <div v-if="comment.attachment" class="mt-2">
-                      <a :href="comment.attachment" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
-                        View Attachment
-                      </a>
-                    </div>
-                    <div v-if="comment.is_temp" class="mt-1 text-xs text-gray-500">
-                      Posting...
+    <!-- Modal container -->
+    <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+      <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div class="sm:flex sm:items-start">
+          <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">
+              {{ selectedCommentType }} Comments - Activity: {{ currentActivity.activity_name }}
+            </h3>
+            <div class="mt-4">
+              <!-- Comments List -->
+              <div class="border rounded-lg p-4 max-h-96 overflow-y-auto mb-4">
+                <div v-for="comment in comments" :key="comment.name" class="mb-4 last:mb-0">
+                  <div class="flex justify-between items-start">
+                    <div class="font-medium">{{ comment.user_fullname || comment.comment_by.split('@')[0] }}</div>
+                    <div class="text-sm text-gray-500">{{ formatDateTime(comment.comment_date) }}</div>
+                  </div>
+                  <div class="mt-1 text-sm text-gray-800">{{ comment.comment }}</div>
+                  <div v-if="comment.attachment" class="mt-2">
+                    <a :href="comment.attachment" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
+                      View Attachment
+                    </a>
+                  </div>
+                  <div v-if="comment.is_temp" class="mt-1 text-xs text-gray-500">
+                    Posting...
+                  </div>
+                  
+                  <!-- Seen By Section - Only show for the last comment -->
+                  <div v-if="isLastComment(comment) && seenByUsers.length > 0" class="mt-2 pt-2 border-t border-gray-100">
+                    <div class="flex items-center text-xs text-gray-500">
+                      <span class="mr-1">Seen by:</span>
+                      <div class="flex flex-wrap">
+                        <span v-for="user in seenByUsers" :key="user.name" class="mr-2">
+                          {{ user.full_name || user.user }}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <!-- New Comment Form -->
-                <div class="border-t pt-4">
-                  <textarea
-                    v-model="newComment"
-                    class="w-full border rounded-md p-2"
-                    rows="3"
-                    placeholder="Type your comment here..."
-                  ></textarea>
-                  <div class="flex justify-between items-center mt-2">
-                    <div class="flex items-center space-x-2">
-                      <input
-                        type="file"
-                        ref="fileInput"
-                        @change="handleFileUpload"
-                        class="hidden"
-                      />
-                      <button
-                        @click="$refs.fileInput.click()"
-                        class="text-sm text-gray-600 hover:text-gray-800"
-                      >
-                        Attach File
-                      </button>
-                      <span v-if="attachment" class="text-sm text-gray-600 flex items-center">
-                        {{ attachment.name }}
-                        <button @click="removeAttachment" class="ml-1 text-red-500 hover:text-red-700">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                          </svg>
-                        </button>
-                      </span>
-                    </div>
+              <!-- Seen By Footer -->
+              <div v-if="seenByUsers.length > 0" class="flex items-center text-xs text-gray-500 mb-2">
+                <span class="mr-1">Seen by:</span>
+                <div class="flex flex-wrap">
+                  <span v-for="user in seenByUsers" :key="user.name" class="mr-2">
+                    {{ user.full_name || user.user }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- New Comment Form -->
+              <div class="border-t pt-4">
+                <textarea
+                  v-model="newComment"
+                  class="w-full border rounded-md p-2"
+                  rows="3"
+                  placeholder="Type your comment here..."
+                ></textarea>
+                <div class="flex justify-between items-center mt-2">
+                  <div class="flex items-center space-x-2">
+                    <input
+                      type="file"
+                      ref="fileInput"
+                      @change="handleFileUpload"
+                      class="hidden"
+                    />
                     <button
-                      @click="submitComment"
-                      class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                      :disabled="!newComment"
+                      @click="$refs.fileInput.click()"
+                      class="text-sm text-gray-600 hover:text-gray-800"
                     >
-                      Post Comment
+                      Attach File
                     </button>
+                    <span v-if="attachment" class="text-sm text-gray-600 flex items-center">
+                      {{ attachment.name }}
+                      <button @click="removeAttachment" class="ml-1 text-red-500 hover:text-red-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                      </button>
+                    </span>
                   </div>
+                  <button
+                    @click="submitComment"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    :disabled="!newComment"
+                  >
+                    Post Comment
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-          <button
-            type="button"
-            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-            @click="closeCommentModal"
-          >
-            Close
-          </button>
-        </div>
+      </div>
+      <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+        <button
+          type="button"
+          class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+          @click="closeCommentModal"
+        >
+          Close
+        </button>
       </div>
     </div>
   </div>
+</div>
 
     <!-- Task Details Modal -->
     <Dialog
@@ -358,7 +380,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { Button, Dialog, createResource } from 'frappe-ui'
 
 const columns = [
-    { label: 'Activity', key: 'activity_name' },
+  { label: 'Activity', key: 'activity_name' },
   { label: 'Task Name', key: 'task_name' },
   { label: 'From Date', key: 'from_date' },
   { label: 'To Date', key: 'to_date' },
@@ -367,6 +389,13 @@ const columns = [
 ]
 
 const statusOptions = ['Not Started', 'Working', 'Completed']
+
+const seenByUsers = ref([]);
+const seenByInterval = ref(null);
+const hasMarkedAsSeen = ref(false);
+const currentActivityKey = ref('');
+const latestCommentTime = ref(null);
+
 
 const tasks = ref([])
 const filteredTasks = ref([])
@@ -438,6 +467,134 @@ watch(filteredTasks, () => {
   currentPage.value = 1
 })
 
+const isLastComment = (comment) => {
+  return comments.value.length > 0 && comment.name === comments.value[0].name;
+};
+
+// API call to mark comments as seen
+const markCommentsAsSeen = async () => {
+  // Create a unique key for this activity+comment_type combination
+  const activityKey = `${currentActivity.value.name}_${selectedCommentType.value}`;
+  
+  // If we've already marked as seen for this specific activity, skip
+  if (!showCommentModal.value || !currentActivity.value.name || hasMarkedAsSeen.value === activityKey) {
+    return { success: true };
+  }
+  
+  try {
+    const formData = new FormData();
+    formData.append('activity_name', currentActivity.value.name);
+    formData.append('comment_type', selectedCommentType.value);
+    
+    // Add CSRF token if available
+    if (window.frappe?.csrf_token) {
+      formData.append('csrf_token', window.frappe.csrf_token);
+    }
+
+    const response = await fetch(
+      '/api/method/client_management.client_management.doctype.activity_comment.activity_comment.mark_comments_as_seen',
+      {
+        method: 'POST',
+        body: formData,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    
+    // Mark that we've already done this for the current activity
+    hasMarkedAsSeen.value = activityKey;
+    
+    return result;
+  } catch (error) {
+    console.error('Error marking comments as seen:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// API call to get seen by users
+const fetchSeenByUsers = async () => {
+  if (!showCommentModal.value || !currentActivity.value.name) return;
+  
+  try {
+    const resource = createResource({
+      url: 'client_management.client_management.doctype.activity_comment.activity_comment.get_seen_by_users',
+      method: 'GET',
+      params: {
+        activity_name: currentActivity.value.name,
+        comment_type: selectedCommentType.value,
+        // Pass the latest comment time to only get users who saw after that
+        since: latestCommentTime.value
+      }
+    });
+
+    const response = await resource.fetch();
+    
+    // Handle both response structures
+    let users = [];
+    if (response.success) {
+      users = response.users || [];
+    } else if (response.message && response.message.success) {
+      users = response.message.users || [];
+    }
+    
+    // Filter out duplicates on client side
+    const uniqueUsers = [];
+    const seenUsers = new Set();
+    
+    for (const user of users) {
+      if (!seenUsers.has(user.user)) {
+        seenUsers.add(user.user);
+        uniqueUsers.push(user);
+      }
+    }
+    
+    seenByUsers.value = uniqueUsers;
+    
+  } catch (error) {
+    console.error('Error fetching seen by users:', error);
+    seenByUsers.value = [];
+  }
+};
+
+const trackSeenBy = async () => {
+  // First mark the comments as seen by the current user
+  const markResult = await markCommentsAsSeen();
+  
+  console.log('markResult:', markResult); // Debug log
+  
+  // Check if the operation was successful
+  if (markResult && (markResult.success || (markResult.message && markResult.message.success))) {
+    console.log("Tracking successful, fetching seen by users");
+    // Then fetch the updated list of users who have seen the comments
+    await fetchSeenByUsers();
+  } else {
+    console.log("Tracking failed or returned unexpected format");
+  }
+};
+
+const setupSeenByTracking = () => {
+  // Clear any existing interval
+  if (seenByInterval.value) {
+    clearInterval(seenByInterval.value);
+    seenByInterval.value = null;
+  }
+  
+  // Start tracking if modal is open
+  if (showCommentModal.value) {
+    // Track immediately
+    trackSeenBy();
+    
+    // Set up interval to update seen by list periodically
+    seenByInterval.value = setInterval(trackSeenBy, 30000); // Update every 30 seconds
+  }
+};
+
+
+
 const openCommentModal = async (task, commentType) => {
   resetCommentForm();
   selectedCommentType.value = commentType;
@@ -448,12 +605,34 @@ const openCommentModal = async (task, commentType) => {
   showCommentModal.value = true;
   // Use explicit parameters when fetching comments
   await fetchComments(task.activity_docname, commentType);
+  setupSeenByTracking();
 };
 
 const closeCommentModal = () => {
-  resetCommentForm()
-  showCommentModal.value = false
-}
+  resetCommentForm();
+  showCommentModal.value = false;
+if (seenByInterval.value) {
+    clearInterval(seenByInterval.value);
+    seenByInterval.value = null;
+  }
+  seenByUsers.value = [];
+  hasMarkedAsSeen.value = false;
+  currentActivityKey.value = '';
+  latestCommentTime.value = null;
+};
+
+watch(showCommentModal, (newValue) => {
+  if (newValue) {
+    // Small delay to ensure DOM is rendered
+    setTimeout(setupSeenByTracking, 100);
+  } else {
+    if (seenByInterval.value) {
+      clearInterval(seenByInterval.value);
+      seenByInterval.value = null;
+    }
+    seenByUsers.value = [];
+  }
+});
 
 const resetCommentForm = () => {
   newComment.value = ''
@@ -514,6 +693,10 @@ const fetchComments = async (activityName = null, commentType = null) => {
         ...comment,
         user_fullname: comment.comment_by_fullname || comment.comment_by.split('@')[0],
       }));
+       if (comments.value.length > 0) {
+        latestCommentTime.value = comments.value[0].comment_date;
+        console.log('Latest comment time:', latestCommentTime.value);
+      }
     }
   } catch (error) {
     console.error("Error fetching comments:", error);
@@ -593,6 +776,9 @@ const submitComment = async () => {
       };
       
       comments.value.unshift(newCommentData);
+      seenByUsers.value = [];
+      hasMarkedAsSeen.value = false;
+      latestCommentTime.value = result.message.comment_date;
       
       // Show success message using Frappe notification (no alert)
       if (typeof frappe !== 'undefined' && frappe.show_alert) {

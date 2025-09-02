@@ -17,9 +17,9 @@
   },
   {
    "fieldname": "contact_person",
-   "fieldtype": "Link",
+   "fieldtype": "Table",
    "label": "Contact Person",
-   "options": "User"
+   "options": "User Reference"
   },
   {
    "fieldname": "selected_users",
@@ -31,8 +31,8 @@
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-07-28 10:52:25.165377",
- "modified_by": "Administrator",
+ "modified": "2025-09-02 16:50:02.073988",
+ "modified_by": "manojkumarm@accsysconsulting.com",
  "module": "Client Management",
  "name": "ClientFormData",
  "owner": "Administrator",

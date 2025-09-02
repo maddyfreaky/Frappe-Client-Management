@@ -11,7 +11,7 @@ export default defineConfig({
 			jinjaBootData: true,
 			lucideIcons: true,
 			buildConfig: {
-				indexHtmlPath: "../<client_management>/www/frontend.html",
+				indexHtmlPath: "../client_management/www/frontend.html",
 				emptyOutDir: true,
 				sourcemap: true,
 			},
@@ -20,7 +20,7 @@ export default defineConfig({
 	],
 	build: {
 		chunkSizeWarningLimit: 1500,
-		outDir: "../<client_management>/public/frontend",
+		outDir: "../client_management/public/frontend",
 		emptyOutDir: true,
 		target: "es2015",
 		sourcemap: true,
