@@ -5,6 +5,12 @@ app_description = "an app for managing clients"
 app_email = "manojkumarm@accsysconsulting.com"
 app_license = "mit"
 
+
+website_route_rules = [
+    {"from_route": "/frontend/activities", "to_route": "frontend"},
+    {"from_route": "/frontend/templatetasks", "to_route": "frontend"}
+]
+
 # Apps
 # ------------------
 
