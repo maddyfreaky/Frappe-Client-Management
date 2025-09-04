@@ -7,8 +7,13 @@ app_license = "mit"
 
 
 website_route_rules = [
+    {"from_route": "/frontend", "to_route": "frontend"},
     {"from_route": "/frontend/activities", "to_route": "frontend"},
-    {"from_route": "/frontend/templatetasks", "to_route": "frontend"}
+    {"from_route": "/frontend/templatetasks", "to_route": "frontend"},
+    {"from_route": "/frontend/template", "to_route": "frontend"},
+    {"from_route": "/frontend/usertasks", "to_route": "frontend"},
+    {"from_route": "/frontend/clientcreation", "to_route": "frontend"}
+
 ]
 
 # Apps
