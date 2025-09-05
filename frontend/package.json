@@ -5,7 +5,8 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite",
-		"build": "vite build",
+		"build": "vite build --base=/assets/client_management/frontend/ && npm run copy-html-entry",
+		"copy-html-entry": "cp ../client_management/public/frontend/index.html ../client_management/www/frontend.html",
 		"preview": "vite preview",
 		"lint": "biome check --write ."
 	},
