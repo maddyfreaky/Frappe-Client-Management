@@ -2,7 +2,7 @@
   <div class="max-w-7xl mx-auto p-6">
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-semibold">My Activities</h1>
-      <Button
+      <Button v-if="!isClient"
         icon-left="plus"
         @click="router.push({ name: 'Template Tasks' })"
       >
@@ -42,7 +42,7 @@
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ activity.owner }}
+                {{ getUsername(activity.owner) }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {{ formatDate(activity.creation) }}
@@ -57,7 +57,7 @@
                <button @click="viewActivity(activity.name)" class="text-indigo-600 hover:text-indigo-900 mr-3">
                 View
                 </button>
-               <button @click="confirmDelete(activity)" class="text-red-600 hover:text-red-900">
+               <button v-if="!isClient" @click="confirmDelete(activity)" class="text-red-600 hover:text-red-900">
     Delete
   </button>
               </td>
@@ -143,6 +143,21 @@ import { useRouter } from 'vue-router'
 import { Button, Dialog, createResource } from 'frappe-ui'
 
 const router = useRouter()
+const userMap = ref({})
+
+const isClient = ref(false);
+
+// Fetch client status when component mounts
+onMounted(async () => {
+  try {
+    const response = await fetch('/api/method/client_management.client_management.doctype.activity_comment.activity_comment.is_user_client');
+    const result = await response.json();
+    isClient.value = result.message || false;
+  } catch (error) {
+    console.error("Error checking user role:", error);
+    isClient.value = false;
+  }
+});
 
 const viewActivity = (activityName) => {
   router.push({
@@ -151,6 +166,40 @@ const viewActivity = (activityName) => {
   })
 }
 
+
+const getUsername = (email) => {
+  if (!email) return 'Unknown'
+  return userMap.value[email]?.username || email.split('@')[0]
+}
+
+const fetchUserData = async () => {
+  const userResource = createResource({
+    url: 'frappe.client.get_list',
+    params: {
+      doctype: 'User',
+      fields: ['email', 'username'],
+      limit: 0
+    },
+    auto: true,
+    onSuccess(data) {
+      // Create a mapping of email to username
+      const mapping = {}
+      data.forEach(user => {
+        mapping[user.email] = {
+          username: user.username
+        }
+      })
+      userMap.value = mapping
+    },
+    onError(error) {
+      console.error('Error fetching user data:', error)
+    }
+  })
+}
+
+onMounted(() => {
+  fetchUserData()
+})
 
 const columns = [
   { label: 'Activity Name', key: 'activity_name' },

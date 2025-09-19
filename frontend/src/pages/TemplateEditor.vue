@@ -38,7 +38,7 @@
           
           <h3 class="card-header">Task {{ index + 1 }}</h3>
           <div class="card-body">
-            <
+            
             <div v-if="index > 0" class="mb-4">
               <Checkbox
                 v-model="task.is_child"

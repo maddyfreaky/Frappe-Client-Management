@@ -28,7 +28,7 @@
           <div>
             <h1 class="text-2xl font-semibold">{{ activity.activity_name }}</h1>
             <div class="flex items-center mt-2 space-x-4 text-sm text-gray-600">
-              <span>Created by: {{ activity.owner }}</span>
+              <span>Created by: {{ getUsername(activity.owner) }}</span>
               <span>Created at: {{ formatDate(activity.creation) }}</span>
             </div>
           </div>
@@ -40,7 +40,7 @@
         <div class="mt-4 grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-500">Client</label>
-            <p class="mt-1 text-sm text-gray-900">{{ activity.client }}</p>
+            <p class="mt-1 text-sm text-gray-900">{{ clientName }}</p>
           </div>
           <div v-if="activity.is_recurring">
             <label class="block text-sm font-medium text-gray-500">Recurring Day</label>
@@ -128,20 +128,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Button, Badge, createResource } from 'frappe-ui'
 
 const route = useRoute()
 const router = useRouter()
-
+const userMap = ref({})
 
 const activity = ref(null)
 const tasks = ref([])
 const loading = ref(true)
 const errorMessage = ref('')
 const userRoleProfile = ref('')
-
+const clientName = ref('')
 
 const filteredTasks = computed(() => {
   const isClient = userRoleProfile.value === 'Client'
@@ -150,11 +150,9 @@ const filteredTasks = computed(() => {
     : tasks.value
 })
 
-
 const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString()
 }
-
 
 const getStatusBadgeTheme = (status) => {
   switch (status) {
@@ -165,17 +163,70 @@ const getStatusBadgeTheme = (status) => {
   }
 }
 
+const getUsername = (email) => {
+  if (!email) return 'Unknown'
+  return userMap.value[email]?.username || email.split('@')[0]
+}
 
-const getCurrentUser = async () => {
-  const resource = createResource({
-    url: 'frappe.client.get',
+const fetchUserData = async () => {
+  const userResource = createResource({
+    url: 'frappe.client.get_list',
     params: {
       doctype: 'User',
-      name: 'Administrator', 
-      fields: ['role_profile_name']
+      fields: ['email', 'username'],
+      limit: 0
+    },
+    auto: true,
+    onSuccess(data) {
+      // Create a mapping of email to username
+      const mapping = {}
+      data.forEach(user => {
+        mapping[user.email] = {
+          username: user.username
+        }
+      })
+      userMap.value = mapping
+    },
+    onError(error) {
+      console.error('Error fetching user data:', error)
     }
   })
-  return await resource.fetch()
+}
+
+onMounted(() => {
+  fetchUserData()
+})
+
+// Function to fetch client name
+const fetchClientName = async (clientId) => {
+  if (!clientId) {
+    clientName.value = ''
+    return
+  }
+  
+  try {
+    const resource = createResource({
+      url: 'frappe.client.get_value',
+      params: {
+        doctype: 'ClientFormData',
+        fieldname: 'client_name',
+        filters: {
+          name: clientId
+        }
+      }
+    })
+    
+    const data = await resource.fetch()
+    
+    if (data) {
+      clientName.value = data.client_name || clientId
+    } else {
+      clientName.value = clientId
+    }
+  } catch (error) {
+    console.error('Error fetching client name:', error)
+    clientName.value = clientId
+  }
 }
 
 const fetchActivityDetails = async () => {
@@ -201,7 +252,7 @@ const fetchActivityDetails = async () => {
     const profileData = await profileResource.fetch()
     userRoleProfile.value = profileData.message?.role_profile_name || ''
 
-    
+    // Fetch activity details
     const activityResource = createResource({
       url: 'frappe.client.get',
       params: {
@@ -211,8 +262,13 @@ const fetchActivityDetails = async () => {
       }
     })
     activity.value = await activityResource.fetch()
-
     
+    // Fetch client name after activity is loaded
+    if (activity.value && activity.value.client) {
+      await fetchClientName(activity.value.client)
+    }
+    
+    // Fetch tasks
     const tasksResource = createResource({
       url: 'client_management.client_management.doctype.activity.activity.get_activity_tasks',
       method: 'GET',
@@ -234,11 +290,18 @@ const fetchActivityDetails = async () => {
   }
 }
 
+// Watch for changes in activity client
+watch(() => activity.value?.client, (newClientId) => {
+  if (newClientId) {
+    fetchClientName(newClientId)
+  }
+})
 
 onMounted(() => {
   fetchActivityDetails()
 })
 </script>
+
 
 <style scoped>
 

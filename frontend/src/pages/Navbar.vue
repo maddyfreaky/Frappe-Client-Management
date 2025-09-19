@@ -8,7 +8,7 @@
         <div class="sidebar-header">
       <div class="header-content">
         
-        <h1><b>Accsys</b></h1>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Imprints</h1>
       </div>
     </div>
         <!-- <div class="breadcrumbs">Dashboard</div> -->

@@ -8,7 +8,10 @@ from frappe import _
 
 
 class Activity(Document):
-	pass
+    def on_trash(self):
+        comments = frappe.get_all("Activity Comment", filters={"activity": self.name}, pluck="name")
+        for c in comments:
+            frappe.delete_doc("Activity Comment", c, force=True, ignore_permissions=True)
 
 @frappe.whitelist()
 def create_activity_from_template(template_name, client, is_recurring, recurring_day, tasks):

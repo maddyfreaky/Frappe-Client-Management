@@ -246,27 +246,27 @@
                   
                   <!-- Seen By Section - Only show for the last comment -->
                   <div v-if="isLastComment(comment) && seenByUsers.length > 0" class="mt-2 pt-2 border-t border-gray-100">
-                    <div class="flex items-center text-xs text-gray-500">
-                      <span class="mr-1">Seen by:</span>
-                      <div class="flex flex-wrap">
-                        <span v-for="user in seenByUsers" :key="user.name" class="mr-2">
-                          {{ user.full_name || user.user }}
-                        </span>
-                      </div>
+                  <div class="flex items-center text-xs text-gray-500">
+                    <span class="mr-1">Seen by:</span>
+                    <div class="flex flex-wrap">
+                      <span v-for="user in seenByUsers" :key="user.user" class="mr-2">
+                        {{ user.full_name || user.user }}
+                      </span>
                     </div>
                   </div>
+                </div>
                 </div>
               </div>
 
               <!-- Seen By Footer -->
-              <div v-if="seenByUsers.length > 0" class="flex items-center text-xs text-gray-500 mb-2">
-                <span class="mr-1">Seen by:</span>
-                <div class="flex flex-wrap">
-                  <span v-for="user in seenByUsers" :key="user.name" class="mr-2">
-                    {{ user.full_name || user.user }}
-                  </span>
-                </div>
-              </div>
+              <div v-if="comments.length > 0 && seenByUsers.length > 0" class="flex items-center text-xs text-gray-500 mb-2">
+  <span class="mr-1">Seen by:</span>
+  <div class="flex flex-wrap">
+    <span v-for="user in seenByUsers" :key="user.user" class="mr-2">
+      {{ user.full_name || user.user }}
+    </span>
+  </div>
+</div>
 
               <!-- New Comment Form -->
               <div class="border-t pt-4">
@@ -395,6 +395,8 @@ const seenByInterval = ref(null);
 const hasMarkedAsSeen = ref(false);
 const currentActivityKey = ref('');
 const latestCommentTime = ref(null);
+const latestCommentId = ref(null);
+
 
 
 const tasks = ref([])
@@ -472,19 +474,14 @@ const isLastComment = (comment) => {
 };
 
 // API call to mark comments as seen
-const markCommentsAsSeen = async () => {
-  // Create a unique key for this activity+comment_type combination
-  const activityKey = `${currentActivity.value.name}_${selectedCommentType.value}`;
-  
-  // If we've already marked as seen for this specific activity, skip
-  if (!showCommentModal.value || !currentActivity.value.name || hasMarkedAsSeen.value === activityKey) {
+const markCommentAsSeen = async (commentId) => {
+  if (!showCommentModal.value || !commentId) {
     return { success: true };
   }
   
   try {
     const formData = new FormData();
-    formData.append('activity_name', currentActivity.value.name);
-    formData.append('comment_type', selectedCommentType.value);
+    formData.append('comment_id', commentId);
     
     // Add CSRF token if available
     if (window.frappe?.csrf_token) {
@@ -492,7 +489,7 @@ const markCommentsAsSeen = async () => {
     }
 
     const response = await fetch(
-      '/api/method/client_management.client_management.doctype.activity_comment.activity_comment.mark_comments_as_seen',
+      '/api/method/client_management.client_management.doctype.activity_comment.activity_comment.mark_comment_as_seen',
       {
         method: 'POST',
         body: formData,
@@ -505,35 +502,28 @@ const markCommentsAsSeen = async () => {
 
     const result = await response.json();
     
-    // Mark that we've already done this for the current activity
-    hasMarkedAsSeen.value = activityKey;
-    
     return result;
   } catch (error) {
-    console.error('Error marking comments as seen:', error);
+    console.error('Error marking comment as seen:', error);
     return { success: false, error: error.message };
   }
 };
 
 // API call to get seen by users
-const fetchSeenByUsers = async () => {
-  if (!showCommentModal.value || !currentActivity.value.name) return;
+const fetchSeenByUsers = async (commentId) => {
+  if (!showCommentModal.value || !commentId) return;
   
   try {
     const resource = createResource({
-      url: 'client_management.client_management.doctype.activity_comment.activity_comment.get_seen_by_users',
+      url: 'client_management.client_management.doctype.activity_comment.activity_comment.get_comment_seen_by',
       method: 'GET',
       params: {
-        activity_name: currentActivity.value.name,
-        comment_type: selectedCommentType.value,
-        // Pass the latest comment time to only get users who saw after that
-        since: latestCommentTime.value
+        comment_id: commentId
       }
     });
 
     const response = await resource.fetch();
     
-    // Handle both response structures
     let users = [];
     if (response.success) {
       users = response.users || [];
@@ -560,21 +550,22 @@ const fetchSeenByUsers = async () => {
   }
 };
 
+
 const trackSeenBy = async () => {
-  // First mark the comments as seen by the current user
-  const markResult = await markCommentsAsSeen();
+  if (!latestCommentId.value) return;
   
-  console.log('markResult:', markResult); // Debug log
-  
-  // Check if the operation was successful
-  if (markResult && (markResult.success || (markResult.message && markResult.message.success))) {
-    console.log("Tracking successful, fetching seen by users");
-    // Then fetch the updated list of users who have seen the comments
-    await fetchSeenByUsers();
-  } else {
-    console.log("Tracking failed or returned unexpected format");
+  try {
+    // Mark the latest comment as seen
+    const markResult = await markCommentAsSeen(latestCommentId.value);
+    
+    // Fetch users who have seen the latest comment
+    await fetchSeenByUsers(latestCommentId.value);
+    
+  } catch (error) {
+    console.error('Error in trackSeenBy:', error);
   }
 };
+
 
 const setupSeenByTracking = () => {
   // Clear any existing interval
@@ -602,6 +593,7 @@ const openCommentModal = async (task, commentType) => {
     name: task.activity_docname,
     activity_name: task.activity_name
   };
+  console.log(seenByUsers)
   showCommentModal.value = true;
   // Use explicit parameters when fetching comments
   await fetchComments(task.activity_docname, commentType);
@@ -616,6 +608,7 @@ if (seenByInterval.value) {
     seenByInterval.value = null;
   }
   seenByUsers.value = [];
+  console.log(seenByUsers)
   hasMarkedAsSeen.value = false;
   currentActivityKey.value = '';
   latestCommentTime.value = null;
@@ -667,11 +660,9 @@ const formatDateTime = (dateString) => {
 
 const fetchComments = async (activityName = null, commentType = null) => {
   try {
-    // Use provided parameters or fall back to the component state
     const activityNameToUse = activityName || currentActivity.value.name;
     const commentTypeToUse = commentType || selectedCommentType.value;
     
-    // Check if we have the required parameters
     if (!activityNameToUse || !commentTypeToUse) {
       console.error("Missing parameters for fetching comments");
       return;
@@ -693,9 +684,14 @@ const fetchComments = async (activityName = null, commentType = null) => {
         ...comment,
         user_fullname: comment.comment_by_fullname || comment.comment_by.split('@')[0],
       }));
-       if (comments.value.length > 0) {
-        latestCommentTime.value = comments.value[0].comment_date;
-        console.log('Latest comment time:', latestCommentTime.value);
+      
+      if (comments.value.length > 0) {
+        // Store the latest comment ID for "seen by" tracking
+        latestCommentId.value = comments.value[0].name;
+        console.log('Latest comment ID:', latestCommentId.value);
+        
+        // Fetch seen by users for the latest comment
+        await fetchSeenByUsers(latestCommentId.value);
       }
     }
   } catch (error) {
@@ -717,7 +713,6 @@ const submitComment = async () => {
       return;
     }
 
-    // Store the comment text before resetting the form
     const commentText = newComment.value.trim();
 
     const formData = new FormData();
@@ -729,7 +724,6 @@ const submitComment = async () => {
       formData.append('file', attachment.value);
     }
 
-    // Add CSRF token if available
     if (window.frappe?.csrf_token) {
       formData.append('csrf_token', window.frappe.csrf_token);
     }
@@ -758,16 +752,15 @@ const submitComment = async () => {
     );
 
     const result = await response.json();
-    console.log('API Response:', result);
 
     if (result.message && result.message.success) {
       // Remove loading comment
       comments.value = comments.value.filter(c => !c.is_loading);
       
-      // Add the new comment directly to the list instead of refreshing
+      // Add the new comment
       const newCommentData = {
         name: result.message.comment_id,
-        comment: commentText, // Use the stored comment text
+        comment: commentText,
         comment_by: window.frappe?.session?.user || 'Unknown User',
         comment_by_fullname: result.message.user_fullname,
         user_fullname: result.message.user_fullname,
@@ -776,11 +769,12 @@ const submitComment = async () => {
       };
       
       comments.value.unshift(newCommentData);
-      seenByUsers.value = [];
-      hasMarkedAsSeen.value = false;
-      latestCommentTime.value = result.message.comment_date;
       
-      // Show success message using Frappe notification (no alert)
+      // Update the latest comment ID and reset seen by for THIS NEW COMMENT only
+      latestCommentId.value = result.message.comment_id;
+      seenByUsers.value = []; // Clear seen by for the new comment
+      
+      // Show success message
       if (typeof frappe !== 'undefined' && frappe.show_alert) {
         frappe.show_alert({
           message: result.message.message || 'Comment added successfully',

@@ -8,7 +8,8 @@
   "activity_name",
   "comment_type",
   "user",
-  "seen_time"
+  "seen_time",
+  "comment_id"
  ],
  "fields": [
   {
@@ -31,12 +32,18 @@
    "fieldname": "seen_time",
    "fieldtype": "Datetime",
    "label": "Seen time"
+  },
+  {
+   "fieldname": "comment_id",
+   "fieldtype": "Link",
+   "label": "Comment Id",
+   "options": "Activity Comment"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-08-29 15:11:38.761838",
+ "modified": "2025-09-15 11:38:06.095909",
  "modified_by": "manojkumarm@accsysconsulting.com",
  "module": "Client Management",
  "name": "Activity Comment Seen",

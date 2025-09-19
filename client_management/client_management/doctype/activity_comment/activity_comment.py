@@ -122,24 +122,25 @@ def is_user_client():
     
 
 @frappe.whitelist()
-def mark_comments_as_seen(activity_name, comment_type):
+def mark_comment_as_seen(comment_id):
     try:
-        # Get current user
         user = frappe.session.user
         
-        # Check if already seen - use proper filter
+        # Check if already seen this specific comment
         existing = frappe.db.exists("Activity Comment Seen", {
-            "activity_name": activity_name,
-            "comment_type": comment_type,
+            "comment_id": comment_id,
             "user": user
         })
-        
+        print("if exist", existing)
         if not existing:
-            # Create new seen record
+            # Get comment details to also store activity info
+            comment = frappe.get_doc("Activity Comment", comment_id)
+            
             doc = frappe.get_doc({
                 "doctype": "Activity Comment Seen",
-                "activity_name": activity_name,
-                "comment_type": comment_type,
+                "comment_id": comment_id,
+                "activity_name": comment.activity,
+                "comment_type": comment.comment_type,
                 "user": user,
                 "seen_time": frappe.utils.now()
             })
@@ -148,36 +149,22 @@ def mark_comments_as_seen(activity_name, comment_type):
         
         return {"success": True}
     except Exception as e:
+        print("exception",e)
         frappe.log_error(frappe.get_traceback(), "Activity Comment Seen Error")
         return {"success": False, "error": str(e)}
-    
+
 @frappe.whitelist()
-def get_seen_by_users(activity_name, comment_type, since=None):
+def get_comment_seen_by(comment_id):
     try:
-        # Build the query based on whether we have a since parameter
-        if since:
-            # Get users who have seen comments since a specific time
-            seen_records = frappe.db.sql("""
-                SELECT DISTINCT user, MAX(seen_time) as seen_time
-                FROM `tabActivity Comment Seen`
-                WHERE activity_name = %s AND comment_type = %s AND seen_time >= %s
-                GROUP BY user
-                ORDER BY seen_time DESC
-            """, (activity_name, comment_type, since), as_dict=True)
-        else:
-            # Get all users who have seen comments
-            seen_records = frappe.db.sql("""
-                SELECT DISTINCT user, MAX(seen_time) as seen_time
-                FROM `tabActivity Comment Seen`
-                WHERE activity_name = %s AND comment_type = %s
-                GROUP BY user
-                ORDER BY seen_time DESC
-            """, (activity_name, comment_type), as_dict=True)
+        seen_records = frappe.get_all("Activity Comment Seen",
+            filters={"comment_id": comment_id},
+            fields=["user", "seen_time"],
+            order_by="seen_time DESC"
+        )
         
-        # Get user fullnames
         users = []
         for record in seen_records:
-            user_info = frappe.get_cached_value("User", record.user, ["full_name", "user_image"], as_dict=1)
+            user_info = frappe.get_cached_value("User", record.user, ["full_name"], as_dict=1)
             users.append({
                 "user": record.user,
                 "full_name": user_info.full_name if user_info else record.user,
@@ -186,5 +173,6 @@ def get_seen_by_users(activity_name, comment_type, since=None):
         
         return {"success": True, "users": users}
     except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "Get Seen By Users Error")
+        print("get except", e)
+        frappe.log_error(frappe.get_traceback(), "Get Comment Seen By Error")
         return {"success": False, "error": str(e)}
